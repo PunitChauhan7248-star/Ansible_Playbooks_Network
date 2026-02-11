@@ -1,6 +1,6 @@
 ---
 - name: Backup Aruba CX Switch Config to Windows Server
-  hosts: aruba_switches
+  hosts: 10.10.0.28
   gather_facts: yes
   collections:
     - arubanetworks.aoscx
