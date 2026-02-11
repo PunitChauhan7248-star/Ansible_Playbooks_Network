@@ -1,7 +1,8 @@
 ---
 - name: Backup Aruba CX Switch Config to Windows Server
   hosts: aruba_switches
-  gather_facts: no
+  gather_facts: yes
+
   collections:
     - arubanetworks.aoscx
     - ansible.netcommon
@@ -19,13 +20,13 @@
       register: switch_config
 
     - name: Ensure backup folder exists on Windows
-      win_file:
+      ansible.windows.win_file:
         path: "{{ backup_path }}"
         state: directory
       delegate_to: winserver01
 
     - name: Save configuration directly to Windows
-      win_copy:
+      ansible.windows.win_copy:
         content: "{{ switch_config.stdout[0] }}"
-        dest: "{{ backup_path }}\\{{ inventory_hostname }}_backup_{{ lookup('pipe','date +%Y-%m-%d_%H-%M') }}.cfg"
+        dest: "{{ backup_path }}\\{{ inventory_hostname }}_backup_{{ ansible_date_time.iso8601_basic }}.cfg"
       delegate_to: winserver01
