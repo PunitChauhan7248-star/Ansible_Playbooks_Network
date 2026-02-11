@@ -22,7 +22,7 @@
       ansible.windows.win_file:
         path: "{{ backup_path }}"
         state: directory
-      delegate_to: 10.1.0.62
+      delegate_to: winserver01
 
     - name: Save configuration directly to Windows
       ansible.windows.win_copy:
