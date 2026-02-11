@@ -1,6 +1,6 @@
 ---
 - name: Backup Aruba CX Switch Config to Windows Server
-  hosts: 10.10.0.28
+  hosts: aruba_switches
   gather_facts: yes
   collections:
     - arubanetworks.aoscx
@@ -11,6 +11,7 @@
     backup_path: "D:\\Switch_logs"
 
   tasks:
+
     - name: Get running configuration from Aruba CX
       arubanetworks.aoscx.aoscx_command:
         commands:
