@@ -13,7 +13,7 @@
   tasks:
 
     - name: Get running configuration from Aruba CX
-      aoscx_command:
+      arubanetworks.aoscx.aoscx_command:
         commands:
           - show running-config
       register: switch_config
