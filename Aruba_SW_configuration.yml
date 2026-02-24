@@ -1,0 +1,110 @@
+---
+- name: Configure Aruba CX Switch
+  hosts: 10.10.0.29
+  gather_facts: no
+  collections:
+    - arubanetworks.aoscx
+    - ansible.netcommon
+
+  vars:
+    access_vlan_id: 10
+    trunk_vlan_id: 20
+    access_ports: "1/1/1-1/1/10"
+    trunk_ports: "1/1/11-1/1/12"
+    snmp_community: "Prog-N@ida"
+    ntp_server: "10.1.0.21"
+    syslog_server: "10.1.0.62"
+    new_username: "netadmin"
+    new_password: "StrongPassword123"
+    acl_name: "BLOCK_SSH"
+
+  tasks:
+
+    - name: Set hostname
+      arubanetworks.aoscx.aoscx_config:
+        lines:
+          - hostname Aruba-CX-01
+
+    # ---------------- VLAN CONFIGURATION ----------------
+
+    - name: Create Access VLAN
+      arubanetworks.aoscx.aoscx_config:
+        lines:
+          - vlan {{ access_vlan_id }}
+          - name ACCESS_VLAN
+
+    - name: Assign Access Ports
+      arubanetworks.aoscx.aoscx_config:
+        lines:
+          - interface {{ access_ports }}
+          - vlan access {{ access_vlan_id }}
+
+    - name: Create Trunk VLAN
+      arubanetworks.aoscx.aoscx_config:
+        lines:
+          - vlan {{ trunk_vlan_id }}
+          - name TRUNK_VLAN
+
+    - name: Configure Trunk Ports
+      arubanetworks.aoscx.aoscx_config:
+        lines:
+          - interface {{ trunk_ports }}
+          - vlan trunk allowed {{ trunk_vlan_id }}
+
+    # ---------------- SNMP CONFIGURATION ----------------
+
+    - name: Configure SNMP
+      arubanetworks.aoscx.aoscx_config:
+        lines:
+          - snmp-server community {{ snmp_community }}
+
+    # ---------------- NTP CONFIGURATION ----------------
+
+    - name: Configure NTP
+      arubanetworks.aoscx.aoscx_config:
+        lines:
+          - ntp server {{ ntp_server }}
+
+    # ---------------- USER CONFIGURATION ----------------
+
+    - name: Create user with admin role
+      arubanetworks.aoscx.aoscx_config:
+        lines:
+          - user {{ new_username }} password plaintext {{ new_password }}
+          - user {{ new_username }} role network-admin
+
+    # ---------------- SYSLOG CONFIGURATION ----------------
+
+    - name: Configure Syslog
+      arubanetworks.aoscx.aoscx_config:
+        lines:
+          - logging {{ syslog_server }}
+
+    # ---------------- ACL CONFIGURATION ----------------
+
+    - name: Create ACL
+      arubanetworks.aoscx.aoscx_config:
+        lines:
+          - access-list ip {{ acl_name }}
+          - 10 deny tcp 10.2.0.0/24 any eq 22
+          - 20 permit ip any any
+
+    - name: Apply ACL to VLAN interface
+      arubanetworks.aoscx.aoscx_config:
+        lines:
+          - interface vlan {{ access_vlan_id }}
+          - ip access-group {{ acl_name }} in
+
+    # ---------------- PORT SECURITY ----------------
+
+    - name: Configure port security
+      arubanetworks.aoscx.aoscx_config:
+        lines:
+          - interface {{ access_ports }}
+          - port-access port-security
+          - port-access port-security maximum 2
+
+    - name: Save configuration
+      arubanetworks.aoscx.aoscx_command:
+        commands:
+          - write memory
