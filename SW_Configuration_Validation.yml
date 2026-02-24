@@ -14,7 +14,7 @@
     snmp_community: "Prog-N@ida"
     ntp_server: "10.1.0.21"
     syslog_server: "10.1.0.62"
-    new_username: "netadmin"
+    new_username: "admin"
     acl_name: "BLOCK_SSH"
 
   tasks:
