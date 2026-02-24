@@ -1,0 +1,93 @@
+---
+- name: Validate Aruba CX Switch Configuration
+  hosts: 10.10.0.29
+  gather_facts: no
+  collections:
+    - arubanetworks.aoscx
+    - ansible.netcommon
+
+  vars:
+    access_vlan_id: 900
+    trunk_vlan_id: 300
+    access_ports: "1/1/1-1/1/10"
+    trunk_ports: "1/1/11-1/1/12"
+    snmp_community: "Prog-N@ida"
+    ntp_server: "10.1.0.21"
+    syslog_server: "10.1.0.62"
+    new_username: "netadmin"
+    acl_name: "BLOCK_SSH"
+
+  tasks:
+
+    - name: Get running configuration
+      arubanetworks.aoscx.aoscx_command:
+        commands:
+          - show running-config
+      register: running_config
+
+    - name: Validate Hostname
+      assert:
+        that:
+          - "'hostname Aruba-CX-01' in running_config.stdout[0]"
+        fail_msg: "Hostname is NOT configured correctly"
+        success_msg: "Hostname validation successful"
+
+    - name: Validate Access VLAN
+      assert:
+        that:
+          - "'vlan {{ access_vlan_id }}' in running_config.stdout[0]"
+          - "'name ACCESS_VLAN' in running_config.stdout[0]"
+        fail_msg: "Access VLAN configuration missing"
+        success_msg: "Access VLAN validation successful"
+
+    - name: Validate Trunk VLAN
+      assert:
+        that:
+          - "'vlan {{ trunk_vlan_id }}' in running_config.stdout[0]"
+          - "'name TRUNK_VLAN' in running_config.stdout[0]"
+        fail_msg: "Trunk VLAN configuration missing"
+        success_msg: "Trunk VLAN validation successful"
+
+    - name: Validate SNMP Configuration
+      assert:
+        that:
+          - "'snmp-server community {{ snmp_community }}' in running_config.stdout[0]"
+        fail_msg: "SNMP configuration missing"
+        success_msg: "SNMP validation successful"
+
+    - name: Validate NTP Server
+      assert:
+        that:
+          - "'ntp server {{ ntp_server }}' in running_config.stdout[0]"
+        fail_msg: "NTP configuration missing"
+        success_msg: "NTP validation successful"
+
+    - name: Validate Syslog Server
+      assert:
+        that:
+          - "'logging {{ syslog_server }}' in running_config.stdout[0]"
+        fail_msg: "Syslog configuration missing"
+        success_msg: "Syslog validation successful"
+
+    - name: Validate User Configuration
+      assert:
+        that:
+          - "'user {{ new_username }}' in running_config.stdout[0]"
+        fail_msg: "User configuration missing"
+        success_msg: "User validation successful"
+
+    - name: Validate ACL Configuration
+      assert:
+        that:
+          - "'access-list ip {{ acl_name }}' in running_config.stdout[0]"
+          - "'deny tcp 10.2.0.0/24 any eq 22' in running_config.stdout[0]"
+        fail_msg: "ACL configuration missing"
+        success_msg: "ACL validation successful"
+
+    - name: Validate Port Security
+      assert:
+        that:
+          - "'port-access port-security' in running_config.stdout[0]"
+          - "'maximum 2' in running_config.stdout[0]"
+        fail_msg: "Port security configuration missing"
+        success_msg: "Port security validation successful"
