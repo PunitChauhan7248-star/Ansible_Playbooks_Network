@@ -103,16 +103,16 @@
   # ---------------- AAA + USER CONFIGURATION ----------------
 
    - name: Ensure local authentication enabled
-      arubanetworks.aoscx.aoscx_config:
+     arubanetworks.aoscx.aoscx_config:
         lines:
           - aaa authentication login default local
 
-    - name: Create local admin user
-      arubanetworks.aoscx.aoscx_config:
-        lines:
-          - password plaintext {{ new_password }}
-          - role network-admin
-        parents: "user {{ new_username }}"
+   - name: Create local admin user
+     arubanetworks.aoscx.aoscx_config:
+       lines:
+         - password plaintext {{ new_password }}
+         - role network-admin
+       parents: "user {{ new_username }}"
         
   # ---------------- ACL CONFIGURATION ----------------
 
