@@ -100,9 +100,10 @@
     - name: Configure port security
       arubanetworks.aoscx.aoscx_config:
         lines:
-          - interface {{ access_ports }}
-          - port-access port-security
+          - port-access port-security enable
           - port-access port-security maximum 2
+          - port-access port-security violation restrict
+        parents: "interface {{ access_ports }}"
 
     - name: Save configuration
       arubanetworks.aoscx.aoscx_command:
