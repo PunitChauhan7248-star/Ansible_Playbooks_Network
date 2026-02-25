@@ -9,8 +9,23 @@
   vars:
     access_vlan_id: 900
     trunk_vlan_id: 300
-    access_ports: "1/1/1-1/1/10"
-    trunk_ports: "1/1/11-1/1/12"
+
+    access_ports:
+      - 1/1/1
+      - 1/1/2
+      - 1/1/3
+      - 1/1/4
+      - 1/1/5
+      - 1/1/6
+      - 1/1/7
+      - 1/1/8
+      - 1/1/9
+      - 1/1/10
+
+    trunk_ports:
+      - 1/1/11
+      - 1/1/12
+
     snmp_community: "Prog-N@ida"
     ntp_server: "10.1.0.21"
     syslog_server: "10.1.0.62"
@@ -20,52 +35,63 @@
 
   tasks:
 
+  # ---------------- HOSTNAME ----------------
+
     - name: Set hostname
       arubanetworks.aoscx.aoscx_config:
         lines:
           - hostname Aruba-CX-01
 
-    # ---------------- VLAN CONFIGURATION ----------------
+  # ---------------- VLAN CONFIGURATION ----------------
 
     - name: Create Access VLAN
       arubanetworks.aoscx.aoscx_config:
         lines:
-          - vlan {{ access_vlan_id }}
           - name ACCESS_VLAN
-
-    - name: Assign Access Ports
-      arubanetworks.aoscx.aoscx_config:
-        lines:
-          - interface {{ access_ports }}
-          - vlan access {{ access_vlan_id }}
+        parents: "vlan {{ access_vlan_id }}"
 
     - name: Create Trunk VLAN
       arubanetworks.aoscx.aoscx_config:
         lines:
-          - vlan {{ trunk_vlan_id }}
           - name TRUNK_VLAN
+        parents: "vlan {{ trunk_vlan_id }}"
+
+  # ---------------- ACCESS PORT CONFIG ----------------
+
+    - name: Configure Access Ports
+      arubanetworks.aoscx.aoscx_config:
+        lines:
+          - no shutdown
+          - vlan access {{ access_vlan_id }}
+        parents: "interface {{ item }}"
+      loop: "{{ access_ports }}"
+
+  # ---------------- TRUNK PORT CONFIG ----------------
 
     - name: Configure Trunk Ports
       arubanetworks.aoscx.aoscx_config:
         lines:
-          - interface {{ trunk_ports }}
+          - no shutdown
+          - vlan trunk native {{ access_vlan_id }}
           - vlan trunk allowed {{ trunk_vlan_id }}
+        parents: "interface {{ item }}"
+      loop: "{{ trunk_ports }}"
 
-    # ---------------- SNMP CONFIGURATION ----------------
+  # ---------------- SNMP CONFIGURATION ----------------
 
     - name: Configure SNMP
       arubanetworks.aoscx.aoscx_config:
         lines:
           - snmp-server community {{ snmp_community }}
 
-    # ---------------- NTP CONFIGURATION ----------------
+  # ---------------- NTP CONFIGURATION ----------------
 
     - name: Configure NTP
       arubanetworks.aoscx.aoscx_config:
         lines:
           - ntp server {{ ntp_server }}
 
-    # ---------------- USER CONFIGURATION ----------------
+  # ---------------- USER CONFIGURATION ----------------
 
     - name: Create user with admin role
       arubanetworks.aoscx.aoscx_config:
@@ -73,37 +99,40 @@
           - user {{ new_username }} password plaintext {{ new_password }}
           - user {{ new_username }} role network-admin
 
-    # ---------------- SYSLOG CONFIGURATION ----------------
+  # ---------------- SYSLOG CONFIGURATION ----------------
 
     - name: Configure Syslog
       arubanetworks.aoscx.aoscx_config:
         lines:
           - logging {{ syslog_server }}
 
-    # ---------------- ACL CONFIGURATION ----------------
+  # ---------------- ACL CONFIGURATION ----------------
 
     - name: Create ACL
       arubanetworks.aoscx.aoscx_config:
         lines:
-          - access-list ip {{ acl_name }}
           - 10 deny tcp 10.2.0.0/24 any eq 22
           - 20 permit ip any any
+        parents: "access-list ip {{ acl_name }}"
 
     - name: Apply ACL to VLAN interface
       arubanetworks.aoscx.aoscx_config:
         lines:
-          - interface vlan {{ access_vlan_id }}
           - ip access-group {{ acl_name }} in
+        parents: "interface vlan {{ access_vlan_id }}"
 
-    # ---------------- PORT SECURITY ----------------
+  # ---------------- PORT SECURITY ----------------
 
-    - name: Configure port security
+    - name: Configure Port Security on Access Ports
       arubanetworks.aoscx.aoscx_config:
         lines:
           - port-access port-security enable
           - port-access port-security maximum 2
           - port-access port-security violation restrict
-        parents: "interface {{ access_ports }}"
+        parents: "interface {{ item }}"
+      loop: "{{ access_ports }}"
+
+  # ---------------- SAVE CONFIGURATION ----------------
 
     - name: Save configuration
       arubanetworks.aoscx.aoscx_command:
