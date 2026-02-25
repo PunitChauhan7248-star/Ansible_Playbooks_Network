@@ -1,6 +1,6 @@
 ---
 - name: Configure Aruba CX Switch
-  hosts: aruba
+  hosts: 10.10.0.29
   gather_facts: no
   collections:
     - arubanetworks.aoscx
@@ -24,7 +24,7 @@
     syslog_server: "10.1.0.62"
 
     new_username: "netadmin"
-    new_password: "StrongPassword123"
+    new_password: "Prog#2026@"
 
     acl_name: "BLOCK_SSH"
 
