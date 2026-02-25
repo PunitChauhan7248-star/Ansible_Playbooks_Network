@@ -7,20 +7,14 @@
     - ansible.netcommon
 
   vars:
+    hostname: Aruba-CX-01
+
     access_vlan_id: 900
     trunk_vlan_id: 300
 
     access_ports:
       - 1/1/1
       - 1/1/2
-      - 1/1/3
-      - 1/1/4
-      - 1/1/5
-      - 1/1/6
-      - 1/1/7
-      - 1/1/8
-      - 1/1/9
-      - 1/1/10
 
     trunk_ports:
       - 1/1/11
@@ -42,41 +36,41 @@
     - name: Set hostname
       arubanetworks.aoscx.aoscx_config:
         lines:
-          - hostname Aruba-CX-01
+          - hostname {{ hostname }}
 
   # ---------------- VLAN CONFIGURATION ----------------
 
     - name: Create Access VLAN
       arubanetworks.aoscx.aoscx_config:
+        parents: "vlan {{ access_vlan_id }}"
         lines:
           - name ACCESS_VLAN
-        parents: "vlan {{ access_vlan_id }}"
 
     - name: Create Trunk VLAN
       arubanetworks.aoscx.aoscx_config:
+        parents: "vlan {{ trunk_vlan_id }}"
         lines:
           - name TRUNK_VLAN
-        parents: "vlan {{ trunk_vlan_id }}"
 
   # ---------------- ACCESS PORT CONFIG ----------------
 
     - name: Configure Access Ports
       arubanetworks.aoscx.aoscx_config:
+        parents: "interface {{ item }}"
         lines:
           - no shutdown
           - vlan access {{ access_vlan_id }}
-        parents: "interface {{ item }}"
       loop: "{{ access_ports }}"
 
   # ---------------- TRUNK PORT CONFIG ----------------
 
     - name: Configure Trunk Ports
       arubanetworks.aoscx.aoscx_config:
+        parents: "interface {{ item }}"
         lines:
           - no shutdown
           - vlan trunk native {{ access_vlan_id }}
           - vlan trunk allowed {{ trunk_vlan_id }}
-        parents: "interface {{ item }}"
       loop: "{{ trunk_ports }}"
 
   # ---------------- SNMP CONFIGURATION ----------------
@@ -107,39 +101,37 @@
         lines:
           - aaa authentication login default local
 
-  # ---------------- USER CONFIGURATION ----------------
+  # ---------------- USER CONFIGURATION (AOS-CX 10.10 Syntax) ----------------
 
     - name: Create local admin user
       arubanetworks.aoscx.aoscx_config:
         lines:
-          - password plaintext {{ new_password }}
-          - role network-admin
-        parents: "user {{ new_username }}"
+          - username {{ new_username }} group administrators password plaintext {{ new_password }}
 
   # ---------------- ACL CONFIGURATION ----------------
 
     - name: Create ACL
       arubanetworks.aoscx.aoscx_config:
+        parents: "access-list ip {{ acl_name }}"
         lines:
           - 10 deny tcp 10.2.0.0/24 any eq 22
           - 20 permit ip any any
-        parents: "access-list ip {{ acl_name }}"
 
     - name: Apply ACL to VLAN interface
       arubanetworks.aoscx.aoscx_config:
+        parents: "interface vlan {{ access_vlan_id }}"
         lines:
           - ip access-group {{ acl_name }} in
-        parents: "interface vlan {{ access_vlan_id }}"
 
   # ---------------- PORT SECURITY ----------------
 
     - name: Configure Port Security on Access Ports
       arubanetworks.aoscx.aoscx_config:
+        parents: "interface {{ item }}"
         lines:
           - port-access port-security enable
           - port-access port-security maximum 2
           - port-access port-security violation restrict
-        parents: "interface {{ item }}"
       loop: "{{ access_ports }}"
 
   # ---------------- SAVE CONFIGURATION ----------------
