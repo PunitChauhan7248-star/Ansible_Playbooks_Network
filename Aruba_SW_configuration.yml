@@ -8,16 +8,14 @@
   vars:
     hostname: Aruba-CX-01
 
-    access_vlan_id: 900
-    trunk_vlan_id: 300
+    access_vlan_id: 100
+    trunk_vlan_id: 101
 
     access_ports:
-      - 1/1/1
-      - 1/1/2
+      - 1/1/5
 
     trunk_ports:
-      - 1/1/11
-      - 1/1/12
+      - 1/1/6
 
     snmp_community: "Prog-N@ida"
     ntp_server: "10.1.0.21"
